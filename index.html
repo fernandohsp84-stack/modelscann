@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ModelScan</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#F0F2F5;color:#1A1D23;font-size:15px;}
+.hdr{background:#003F7A;padding:14px 16px;display:flex;align-items:center;gap:10px;}
+.hdr-icon{width:28px;height:28px;background:#F47920;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hdr-name{font-size:17px;font-weight:700;color:#fff;}
+.hdr-dbg{font-size:10px;font-weight:700;color:#F47920;background:rgba(244,121,32,.2);border-radius:4px;padding:2px 7px;margin-left:4px;}
+.sec{padding:16px 14px;}
+.sec-bar{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff;background:#005CA9;padding:8px 14px;margin:0 -14px 14px;}
+.card{background:#fff;border-radius:10px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.card-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9BA3B2;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid #ECEEF2;}
+.tip{display:flex;gap:10px;padding:13px 14px;border-radius:10px;background:#E5F3F4;border:1px solid rgba(13,115,119,.2);color:#0D7377;font-size:13px;line-height:1.6;margin-bottom:14px;}
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+label{display:block;font-size:13px;font-weight:600;color:#3C4353;margin-bottom:5px;}
+.req{color:#F47920;}
+input[type=text],input[type=password],textarea,select{width:100%;border:1.5px solid #D0D5DD;border-radius:8px;padding:12px;font-size:15px;color:#1A1D23;background:#fff;font-family:inherit;-webkit-appearance:none;outline:none;display:block;}
+input:focus,textarea:focus{border-color:#005CA9;}
+textarea{resize:vertical;min-height:80px;}
+.key-row{display:flex;gap:8px;}
+.key-row input{flex:1;}
+.eye{background:#F0F2F5;border:1.5px solid #D0D5DD;border-radius:8px;padding:0 13px;font-size:13px;font-weight:600;cursor:pointer;-webkit-appearance:none;flex-shrink:0;color:#005CA9;}
+.tiles{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;}
+@media(max-width:400px){.tiles{grid-template-columns:1fr 1fr;}}
+.tile{border:1.5px solid #D0D5DD;border-radius:8px;padding:12px 6px;cursor:pointer;text-align:center;background:#fff;}
+.tile.on{border-color:#005CA9;background:#EBF3FB;}
+.tile-i{font-size:18px;margin-bottom:4px;}
+.tile-l{font-size:10px;font-weight:600;color:#717A8C;}
+.tile.on .tile-l{color:#005CA9;}
+.fi{display:flex;align-items:center;gap:8px;background:#F8F9FA;border:1px solid #ECEEF2;border-radius:6px;padding:8px 10px;margin-top:6px;}
+.fi-n{flex:1;font-size:12px;color:#3C4353;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fi-r{background:none;border:none;color:#B8BEC9;font-size:18px;cursor:pointer;padding:0 4px;}
+.link-row{display:flex;gap:8px;margin-bottom:8px;}
+.link-row input{flex:1;}
+.ladd{background:#F0F2F5;border:1.5px solid #D0D5DD;border-radius:8px;padding:0 14px;font-size:14px;font-family:inherit;cursor:pointer;-webkit-appearance:none;color:#005CA9;font-weight:600;white-space:nowrap;}
+.chip{display:inline-block;background:#EBF3FB;border:1px solid rgba(0,92,169,.2);border-radius:20px;padding:4px 10px;font-size:12px;color:#005CA9;margin:3px 4px 3px 0;}
+.btn-run{display:block;width:100%;padding:17px;background:#005CA9;color:#fff;border:none;border-radius:10px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;-webkit-appearance:none;margin-top:14px;text-align:center;}
+.btn-run:active{background:#003F7A;}
+.btn-s{display:inline-block;padding:11px 16px;background:#fff;color:#3C4353;border:1.5px solid #D0D5DD;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-appearance:none;}
+.ok{background:#E6F4EE;border:1px solid rgba(27,127,79,.3);border-radius:10px;padding:14px;margin-bottom:12px;font-size:14px;color:#1B7F4F;font-weight:600;line-height:1.6;}
+.mc-hd{background:linear-gradient(135deg,#003F7A,#1A6DC4);border-radius:10px;padding:18px;color:#fff;margin-bottom:12px;}
+.mc-id{font-family:monospace;font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:2px 9px;border-radius:20px;display:inline-block;margin-bottom:8px;}
+.mc-n{font-size:18px;font-weight:700;margin-bottom:3px;}
+.mc-f{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:12px;}
+.mc-lv{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;}
+.mc-ln{font-size:22px;font-weight:800;}
+.mc-lname{font-size:12px;color:rgba(255,255,255,.8);}
+.mc-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;}
+.mc-ml{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px;}
+.mc-mv{font-size:12px;color:rgba(255,255,255,.85);}
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px;}
+.ic{background:#F8F9FA;border:1px solid #ECEEF2;border-radius:7px;padding:9px 11px;}
+.ic-l{font-size:9px;font-weight:700;color:#B8BEC9;text-transform:uppercase;margin-bottom:2px;}
+.ic-v{font-size:12px;color:#1A1D23;line-height:1.4;}
+.scrow{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.scd{font-size:11px;color:#717A8C;width:110px;flex-shrink:0;}
+.sctrk{flex:1;height:5px;background:#ECEEF2;border-radius:3px;overflow:hidden;}
+.scf{height:100%;border-radius:3px;background:#005CA9;}
+.scv{font-size:11px;color:#B8BEC9;width:24px;text-align:right;flex-shrink:0;}
+.sctot{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#EBF3FB;border-radius:6px;margin-top:8px;}
+.sctot-l{font-size:12px;font-weight:700;color:#005CA9;}
+.sctot-v{font-size:20px;font-weight:800;color:#005CA9;}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.tag{background:#ECEEF2;border-radius:20px;padding:3px 9px;font-size:11px;color:#717A8C;}
+.ci{padding:9px 11px;border-radius:6px;border-left:3px solid #ccc;font-size:13px;color:#3C4353;line-height:1.5;margin-bottom:5px;background:#F8F9FA;}
+.ci-crit{background:#FBECEC;border-left-color:#B83232;}
+.ci-warn{background:#FDF5E6;border-left-color:#9A6200;}
+.ci-ok{background:#E6F4EE;border-left-color:#1B7F4F;}
+.txt{font-size:13px;color:#717A8C;line-height:1.7;}
+.dec-row{display:flex;gap:8px;margin-top:10px;}
+.dec-btn{flex:1;padding:13px;border-radius:8px;border:1.5px solid #D0D5DD;background:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#717A8C;}
+.dec-ap-on{border-color:#1B7F4F !important;background:#E6F4EE !important;color:#1B7F4F !important;}
+.dec-rj-on{border-color:#9A6200 !important;background:#FDF5E6 !important;color:#9A6200 !important;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:440px){.g2{grid-template-columns:1fr;}}
+.spin{width:36px;height:36px;border:3px solid #ECEEF2;border-top-color:#005CA9;border-radius:50%;margin:0 auto 12px;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.sep{height:2px;background:#D0D5DD;margin:4px 0 0;}
+.email-pre{background:#F8F9FA;border:1px solid #DDE1E9;border-radius:8px;padding:12px;font-size:11px;color:#3C4353;line-height:1.75;white-space:pre-wrap;font-family:monospace;word-break:break-all;}
+.err-banner{background:#FBECEC;border:1px solid rgba(184,50,50,.3);border-radius:8px;padding:12px 14px;font-size:13px;color:#B83232;margin-bottom:12px;display:none;}
+#dbg-panel{background:#0D1117;border-radius:10px;padding:12px;margin-bottom:12px;}
+#dbg-title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+#dbg-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#F47920;}
+#dbg-clear{background:none;border:1px solid #30363D;border-radius:4px;color:#8B949E;font-size:10px;padding:2px 8px;cursor:pointer;font-family:inherit;}
+#dbg-log{font-family:monospace;font-size:11px;color:#E6EDF3;line-height:1.9;max-height:200px;overflow-y:auto;word-break:break-all;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-icon">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x=".5" y=".5" width="13" height="13" rx="2" stroke="white" stroke-width="1.2" fill="none"/>
+      <path d="M3 7h8M7 3v8" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="hdr-name">ModelScan</div>
+  <span class="hdr-dbg">DEBUG v4</span>
+</div>
+
+<div class="sec">
+  <div class="sec-bar">Painel de Debug</div>
+  <div id="dbg-panel">
+    <div id="dbg-title-row">
+      <span id="dbg-label">LOG EM TEMPO REAL</span>
+      <button id="dbg-clear">Limpar</button>
+    </div>
+    <div id="dbg-log">Aguardando JS...</div>
+  </div>
+  <p style="font-size:11px;color:#B8BEC9;">Tire print desta tela apos o erro aparecer.</p>
+</div>
+
+<div class="sep"></div>
+
+<div class="sec">
+<div class="sec-bar">Passo 1 - Identificacao</div>
+<div class="card">
+<div class="card-t">Acesso a API</div>
+<div class="field">
+<label>Chave API Anthropic</label>
+<div class="key-row">
+<input type="password" id="api-key" placeholder="sk-ant-... (vazio = modo demo)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+<button class="eye" type="button" id="eye-btn">show</button>
+</div>
+<div style="font-size:11px;color:#B8BEC9;margin-top:5px;">Gere em console.anthropic.com</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-t">Dados do Modelo</div>
+<div class="field"><label>Nome do Modelo <span class="req">*</span></label><input type="text" id="nm" placeholder="ex: Scoring de Credito PF"></div>
+<div class="field"><label>Area / Superintendencia <span class="req">*</span></label><input type="text" id="ar" placeholder="ex: SUPEC"></div>
+<div class="field"><label>Model Owner <span class="req">*</span></label><input type="text" id="ow" placeholder="Nome completo"></div>
+<div class="field"><label>Seu e-mail <span class="req">*</span></label><input type="text" id="oe" placeholder="seu@email.com" inputmode="email" autocapitalize="none"></div>
+</div>
+
+<div class="card">
+<div class="card-t">Contato Validacao</div>
+<div class="field"><label>E-mail Validacao</label><input type="text" id="ve" placeholder="validacao@email.com" inputmode="email" autocapitalize="none"></div>
+<div class="field"><label>E-mail Comite (opcional)</label><input type="text" id="ce" placeholder="comite@email.com" inputmode="email" autocapitalize="none"></div>
+</div>
+</div>
+
+<div class="sep"></div>
+
+<div class="sec">
+<div class="sec-bar">Passo 2 - Fontes</div>
+<div class="card">
+<div class="card-t">Tipo de Fonte</div>
+<div class="tiles" id="tiles">
+<div class="tile" data-s="pdf"        id="tile-pdf"><div class="tile-i">&#128196;</div><div class="tile-l">PDF/Word</div></div>
+<div class="tile" data-s="sharepoint" id="tile-sp"><div class="tile-i">&#9729;</div><div class="tile-l">SharePoint</div></div>
+<div class="tile" data-s="databricks" id="tile-db"><div class="tile-i">&#9889;</div><div class="tile-l">Databricks</div></div>
+<div class="tile" data-s="gcp"        id="tile-gcp"><div class="tile-i">&#128309;</div><div class="tile-l">GCP</div></div>
+<div class="tile" data-s="python"     id="tile-py"><div class="tile-i">&#128013;</div><div class="tile-l">Python/Jupyter</div></div>
+<div class="tile" data-s="r"          id="tile-r"><div class="tile-i">&#128202;</div><div class="tile-l">R/RMarkdown</div></div>
+<div class="tile" data-s="git"        id="tile-git"><div class="tile-i">&#128193;</div><div class="tile-l">Git/GitLab</div></div>
+<div class="tile" data-s="link"       id="tile-link"><div class="tile-i">&#128279;</div><div class="tile-l">Link/URL</div></div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-t">Upload de Arquivos</div>
+<input type="file" id="finp" multiple style="display:block;width:100%;padding:14px;border:2px dashed #005CA9;border-radius:10px;background:#EBF3FB;color:#005CA9;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:10px;">
+<div id="flist-ok" style="display:none;" class="ok"></div>
+<div id="flist"></div>
+</div>
+
+<div class="card">
+<div class="card-t">Links de Repositorios</div>
+<div class="link-row">
+<input type="text" id="linp" placeholder="https://..." inputmode="url" autocapitalize="none">
+<button class="ladd" type="button" id="btn-addlink">+ Add</button>
+</div>
+<div id="chips"></div>
+</div>
+
+<div class="card">
+<div class="card-t">Contexto Adicional (opcional)</div>
+<textarea id="ctx" placeholder="Cole trechos de codigo ou descricoes do modelo..."></textarea>
+</div>
+</div>
+
+<div class="sep"></div>
+
+<div class="sec">
+<div class="sec-bar">Passo 3 - Analise pelos Agentes</div>
+<div class="tip"><span style="font-size:18px;flex-shrink:0;">&#129302;</span><div>Clique em <strong>Executar Analise</strong>. Os 5 agentes processam e geram o Model Card.</div></div>
+<div id="err-banner" class="err-banner"></div>
+<div id="loading" style="display:none;text-align:center;padding:24px 0;">
+<div class="spin"></div>
+<div id="loading-txt" style="font-size:14px;color:#717A8C;">Iniciando agentes...</div>
+</div>
+<button class="btn-run" type="button" id="btn-run">&#9654; Executar Analise</button>
+</div>
+
+<div class="sep"></div>
+
+<div class="sec" id="sec-mc" style="display:none;">
+<div class="sec-bar">Passo 4 - Model Card Gerado</div>
+<div id="mc-out"></div>
+</div>
+
+<div style="height:50px;"></div>
+
+<!-- JS EXTERNO — resolve CSP do GitHub Pages -->
+
+<script src="./modelscan.js"></script>
+
+<!-- bind tiles via JS puro, sem onclick inline -->
+
+<script>
+(function() {
+  var tiles = document.querySelectorAll('.tile');
+  for (var i = 0; i < tiles.length; i++) {
+    (function(tile) {
+      tile.addEventListener('click', function() { togTile(tile); });
+    })(tiles[i]);
+  }
+})();
+</script>
+
+</body>
+</html>
