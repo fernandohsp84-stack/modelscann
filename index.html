@@ -44,7 +44,7 @@ textarea{resize:vertical;min-height:80px}
 .btn-run:active{background:#003F7A}
 .btn-s{display:inline-block;padding:11px 16px;background:#fff;color:#3C4353;border:1.5px solid #D0D5DD;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-appearance:none}
 .ok{background:#E6F4EE;border:1px solid rgba(27,127,79,.3);border-radius:10px;padding:14px;margin-bottom:12px;font-size:14px;color:#1B7F4F;font-weight:600;line-height:1.6}
-.err-banner{background:#FBECEC;border:1px solid rgba(184,50,50,.3);border-radius:8px;padding:12px 14px;font-size:13px;color:#B83232;margin-bottom:12px;display:none}
+.err{background:#FBECEC;border:1px solid rgba(184,50,50,.3);border-radius:8px;padding:12px 14px;font-size:13px;color:#B83232;margin-bottom:12px;display:none}
 .mc-hd{background:linear-gradient(135deg,#003F7A,#1A6DC4);border-radius:10px;padding:18px;color:#fff;margin-bottom:12px}
 .mc-id{font-family:monospace;font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:2px 9px;border-radius:20px;display:inline-block;margin-bottom:8px}
 .mc-n{font-size:18px;font-weight:700;margin-bottom:3px}
@@ -84,11 +84,6 @@ textarea{resize:vertical;min-height:80px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sep{height:2px;background:#D0D5DD;margin:4px 0 0}
 .email-pre{background:#F8F9FA;border:1px solid #DDE1E9;border-radius:8px;padding:12px;font-size:11px;color:#3C4353;line-height:1.75;white-space:pre-wrap;font-family:monospace;word-break:break-all}
-#dbg{background:#0D1117;border-radius:10px;padding:12px;margin-bottom:12px}
-#dbg-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-#dbg-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#F47920}
-#dbg-btn{background:none;border:1px solid #30363D;border-radius:4px;color:#8B949E;font-size:10px;padding:2px 8px;cursor:pointer;font-family:inherit}
-#dbg-log{font-family:monospace;font-size:11px;color:#E6EDF3;line-height:1.9;max-height:180px;overflow-y:auto;word-break:break-all}
 </style>
 </head>
 <body>
@@ -104,17 +99,7 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <div class="sec">
-  <div class="sec-bar">Debug</div>
-  <div id="dbg">
-    <div id="dbg-hd"><span id="dbg-lbl">LOG</span><button id="dbg-btn">Limpar</button></div>
-    <div id="dbg-log">iniciando...</div>
-  </div>
-</div>
-
-<div class="sep"></div>
-
-<div class="sec">
-<div class="sec-bar">Passo 1 — Identificacao</div>
+<div class="sec-bar">Passo 1 - Identificacao</div>
 <div class="card">
 <div class="card-t">Acesso a API</div>
 <div class="field">
@@ -143,10 +128,10 @@ textarea{resize:vertical;min-height:80px}
 <div class="sep"></div>
 
 <div class="sec">
-<div class="sec-bar">Passo 2 — Fontes</div>
+<div class="sec-bar">Passo 2 - Fontes</div>
 <div class="card">
 <div class="card-t">Tipo de Fonte</div>
-<div class="tiles">
+<div class="tiles" id="tiles">
 <div class="tile" data-s="pdf"><div class="tile-i">&#128196;</div><div class="tile-l">PDF/Word</div></div>
 <div class="tile" data-s="sharepoint"><div class="tile-i">&#9729;</div><div class="tile-l">SharePoint</div></div>
 <div class="tile" data-s="databricks"><div class="tile-i">&#9889;</div><div class="tile-l">Databricks</div></div>
@@ -180,12 +165,12 @@ textarea{resize:vertical;min-height:80px}
 <div class="sep"></div>
 
 <div class="sec">
-<div class="sec-bar">Passo 3 — Analise pelos Agentes</div>
+<div class="sec-bar">Passo 3 - Analise pelos Agentes</div>
 <div class="tip"><span style="font-size:18px;flex-shrink:0">&#129302;</span><div>Clique em <strong>Executar Analise</strong>. Os 5 agentes processam e geram o Model Card.</div></div>
-<div id="err-banner" class="err-banner"></div>
+<div id="err" class="err"></div>
 <div id="loading" style="display:none;text-align:center;padding:24px 0">
 <div class="spin"></div>
-<div id="loading-txt" style="font-size:14px;color:#717A8C">Iniciando agentes...</div>
+<div id="ltxt" style="font-size:14px;color:#717A8C">Iniciando agentes...</div>
 </div>
 <button class="btn-run" type="button" id="btn-run">&#9654; Executar Analise</button>
 </div>
@@ -193,368 +178,335 @@ textarea{resize:vertical;min-height:80px}
 <div class="sep"></div>
 
 <div class="sec" id="sec-mc" style="display:none">
-<div class="sec-bar">Passo 4 — Model Card Gerado</div>
+<div class="sec-bar">Passo 4 - Model Card Gerado</div>
 <div id="mc-out"></div>
 </div>
 
 <div style="height:50px"></div>
 
 <script>
-(function() {
-
 var FILES = [];
 var LINKS = [];
 var SOURCES = [];
 var RESULT = null;
 var DECISION = null;
-var LOG = [];
 
-function log(msg, t) {
-  var c = {ok:'#3FB950',err:'#F85149',inf:'#58A6FF',w:'#D29922'}[t] || '#58A6FF';
-  var p = {ok:'OK ',err:'ERR ',inf:'-- ',w:'AV '}[t] || '-- ';
-  var ts = new Date().toLocaleTimeString('pt-BR');
-  LOG.push('<span style="color:' + c + '">' + ts + ' ' + p + msg + '</span>');
-  if (LOG.length > 60) { LOG.shift(); }
-  var el = document.getElementById('dbg-log');
-  if (el) { el.innerHTML = LOG.join('<br>'); el.scrollTop = el.scrollHeight; }
+function GV(id) {
+  var e = document.getElementById(id);
+  return e && e.value ? e.value.trim() : '';
 }
-
 function G(id) { return document.getElementById(id); }
-function GV(id) { var e = G(id); return e && e.value ? e.value.trim() : ''; }
 function wait(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
-function uid() { return 'MDL-' + Math.random().toString(36).substr(2,6).toUpperCase(); }
+function mkUID() { return 'MDL-' + Math.random().toString(36).substr(2,6).toUpperCase(); }
 
-function showErr(m) { log(m,'err'); var b=G('err-banner'); if(b){b.textContent=m;b.style.display='block';} }
-function hideErr() { var b=G('err-banner'); if(b){b.style.display='none';} }
-function resetBtn() { var b=G('btn-run'); if(b){b.style.display='block';} G('loading').style.display='none'; log('Botao restaurado','w'); }
-
-// TILES
-document.querySelectorAll('.tile').forEach(function(el) {
-  el.addEventListener('click', function() {
-    var s = el.getAttribute('data-s');
-    var on = el.className.indexOf('on') >= 0;
-    el.className = on ? 'tile' : 'tile on';
-    var i = SOURCES.indexOf(s);
-    if (!on) { if (i<0) SOURCES.push(s); }
-    else { if (i>=0) SOURCES.splice(i,1); }
-    log('fonte ' + s + (on?' OFF':' ON'),'inf');
-  });
+document.getElementById('btn-eye').addEventListener('click', function() {
+  var i = document.getElementById('api-key');
+  i.type = i.type === 'password' ? 'text' : 'password';
 });
 
-// ARQUIVOS
-G('finp').addEventListener('change', function() {
-  var fl = this.files, i, f, j, found;
-  for (i=0; i<fl.length; i++) {
-    f=fl[i]; found=false;
-    for (j=0; j<FILES.length; j++) { if (FILES[j].name===f.name) { found=true; break; } }
-    if (!found) FILES.push(f);
+document.getElementById('finp').addEventListener('change', function() {
+  var fl = this.files;
+  for (var i = 0; i < fl.length; i++) {
+    var found = false;
+    for (var j = 0; j < FILES.length; j++) {
+      if (FILES[j].name === fl[i].name) { found = true; break; }
+    }
+    if (!found) FILES.push(fl[i]);
   }
-  log(FILES.length + ' arquivo(s)','ok');
   renderFiles();
 });
 
 function renderFiles() {
-  var i, h='';
-  for (i=0; i<FILES.length; i++) {
+  var h = '';
+  for (var i = 0; i < FILES.length; i++) {
     var ext = FILES[i].name.split('.').pop().toUpperCase();
-    var kb = Math.round(FILES[i].size/1024);
-    h += '<div class="fi">';
-    h += '<span style="font-size:11px;color:#717A8C;flex-shrink:0;font-weight:700">' + ext + '</span>';
+    var kb = Math.round(FILES[i].size / 1024);
+    h += '<div class="fi"><span style="font-size:11px;color:#717A8C;flex-shrink:0;font-weight:700">' + ext + '</span>';
     h += '<span class="fi-n">' + FILES[i].name + ' (' + kb + 'KB)</span>';
-    h += '<button class="fi-r" type="button" data-i="' + i + '">x</button>';
-    h += '</div>';
+    h += '<button class="fi-r" type="button" data-i="' + i + '">x</button></div>';
   }
-  var fl=G('flist'); if(fl) fl.innerHTML=h;
-  var ok=G('flist-ok');
-  if (ok) { ok.style.display = FILES.length>0 ? 'block' : 'none'; if(FILES.length>0) ok.textContent=FILES.length+' arquivo(s) carregado(s).'; }
-  document.querySelectorAll('.fi-r').forEach(function(btn) {
-    btn.addEventListener('click', function() { FILES.splice(parseInt(btn.getAttribute('data-i')),1); renderFiles(); });
-  });
+  var fl = document.getElementById('flist');
+  if (fl) fl.innerHTML = h;
+  var ok = document.getElementById('flist-ok');
+  if (ok) {
+    ok.style.display = FILES.length > 0 ? 'block' : 'none';
+    if (FILES.length > 0) ok.textContent = FILES.length + ' arquivo(s) carregado(s).';
+  }
+  var btns = document.querySelectorAll('.fi-r');
+  for (var k = 0; k < btns.length; k++) {
+    btns[k].addEventListener('click', function() {
+      FILES.splice(parseInt(this.getAttribute('data-i')), 1);
+      renderFiles();
+    });
+  }
 }
 
-// LINKS
-G('btn-addlink').addEventListener('click', function() {
-  var inp=G('linp'), v=inp.value.trim(), i, found=false;
+document.getElementById('btn-addlink').addEventListener('click', function() {
+  var inp = document.getElementById('linp');
+  var v = inp.value.trim();
   if (!v) return;
-  for (i=0;i<LINKS.length;i++) { if(LINKS[i]===v){found=true;break;} }
+  var found = false;
+  for (var i = 0; i < LINKS.length; i++) {
+    if (LINKS[i] === v) { found = true; break; }
+  }
   if (!found) LINKS.push(v);
-  inp.value='';
-  log('link: '+v,'inf');
+  inp.value = '';
   renderChips();
 });
 
 function renderChips() {
-  var i, h='';
-  for (i=0;i<LINKS.length;i++) {
+  var h = '';
+  for (var i = 0; i < LINKS.length; i++) {
     h += '<span class="chip">' + LINKS[i];
-    h += '<button type="button" data-i="' + i + '" class="chip-rm" style="background:none;border:none;color:rgba(0,92,169,.5);cursor:pointer;font-size:14px;margin-left:4px">x</button>';
-    h += '</span>';
+    h += '<button type="button" data-i="' + i + '" class="chip-rm" style="background:none;border:none;color:rgba(0,92,169,.5);cursor:pointer;font-size:14px;margin-left:4px">x</button></span>';
   }
-  var el=G('chips'); if(el) el.innerHTML=h;
-  document.querySelectorAll('.chip-rm').forEach(function(btn) {
-    btn.addEventListener('click', function() { LINKS.splice(parseInt(btn.getAttribute('data-i')),1); renderChips(); });
+  var el = document.getElementById('chips');
+  if (el) el.innerHTML = h;
+  var btns = document.querySelectorAll('.chip-rm');
+  for (var k = 0; k < btns.length; k++) {
+    btns[k].addEventListener('click', function() {
+      LINKS.splice(parseInt(this.getAttribute('data-i')), 1);
+      renderChips();
+    });
+  }
+}
+
+var tileEls = document.querySelectorAll('.tile');
+for (var ti = 0; ti < tileEls.length; ti++) {
+  tileEls[ti].addEventListener('click', function() {
+    var s = this.getAttribute('data-s');
+    var on = this.className.indexOf('on') >= 0;
+    this.className = on ? 'tile' : 'tile on';
+    var idx = SOURCES.indexOf(s);
+    if (!on) { if (idx < 0) SOURCES.push(s); }
+    else { if (idx >= 0) SOURCES.splice(idx, 1); }
   });
 }
 
-// EYE
-G('btn-eye').addEventListener('click', function() {
-  var inp=G('api-key'); if(inp) inp.type=inp.type==='password'?'text':'password';
-});
-
-// DEBUG CLEAR
-G('dbg-btn').addEventListener('click', function() {
-  LOG=[]; var el=G('dbg-log'); if(el) el.innerHTML='<span style="color:#58A6FF">limpo.</span>';
-});
-
-// EXECUTAR
-G('btn-run').addEventListener('click', function() {
-  log('BTN clicado!','ok');
+document.getElementById('btn-run').addEventListener('click', function() {
   executar();
 });
 
+function showErr(msg) {
+  var b = document.getElementById('err');
+  if (b) { b.textContent = msg; b.style.display = 'block'; }
+}
+function hideErr() {
+  var b = document.getElementById('err');
+  if (b) b.style.display = 'none';
+}
+function resetBtn() {
+  var btn = document.getElementById('btn-run');
+  if (btn) btn.style.display = 'block';
+  document.getElementById('loading').style.display = 'none';
+}
+
 async function executar() {
-  log('executar()','inf');
-  var nm=GV('nm'), ar=GV('ar'), ow=GV('ow'), oe=GV('oe');
-  log('nm='+nm+' ar='+ar,'inf');
+  var nm = GV('nm'), ar = GV('ar'), ow = GV('ow'), oe = GV('oe');
   if (!nm) { alert('Informe o Nome do Modelo.'); return; }
   if (!ar) { alert('Informe a Area.'); return; }
   if (!ow) { alert('Informe o Model Owner.'); return; }
   if (!oe) { alert('Informe seu e-mail.'); return; }
-
-  var hasKey = GV('api-key').length > 0;
-  log('chave='+hasKey, hasKey?'ok':'w');
   hideErr();
-  G('btn-run').style.display='none';
-  G('loading').style.display='block';
-
-  var steps=['Agente de Ingestao: lendo fontes...','Agente RAG: extraindo informacoes...','Agente Classificador: identificando tecnica...','Agente de Criticidade: calculando dimensoes...','Sintese: gerando Model Card...'];
-  var i;
-  for (i=0;i<steps.length;i++) {
-    G('loading-txt').textContent=steps[i];
-    log('step '+(i+1),'inf');
-    await wait(i===1?1800:1200);
+  document.getElementById('btn-run').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  var steps = ['Agente de Ingestao: lendo fontes...','Agente RAG: extraindo informacoes...','Agente Classificador: identificando tecnica...','Agente de Criticidade: calculando dimensoes...','Sintese: gerando Model Card...'];
+  for (var i = 0; i < steps.length; i++) {
+    document.getElementById('ltxt').textContent = steps[i];
+    await wait(i === 1 ? 1800 : 1200);
   }
-
-  log('chamando '+(hasKey?'API':'demo'),'inf');
   try {
-    RESULT = hasKey ? await callAPI(GV('api-key')) : makeDemo();
-    log('resultado OK nivel='+RESULT.criticality_level,'ok');
+    var key = GV('api-key');
+    RESULT = key ? await callAPI(key) : makeDemo();
   } catch(e) {
-    log('ERRO: '+e.message,'err');
     resetBtn();
-    showErr('Erro: '+e.message);
+    showErr('Erro: ' + e.message);
     return;
   }
-
-  G('loading').style.display='none';
-  G('sec-mc').style.display='block';
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('sec-mc').style.display = 'block';
   renderMC(RESULT);
-  log('FLUXO COMPLETO','ok');
-  G('sec-mc').scrollIntoView({behavior:'smooth'});
+  document.getElementById('sec-mc').scrollIntoView({ behavior: 'smooth' });
 }
 
 function readTxt(f) {
-  return new Promise(function(res,rej) {
-    var r=new FileReader();
-    r.onload=function(e){res(e.target.result);};
-    r.onerror=function(){rej(new Error('FileReader error'));};
+  return new Promise(function(res, rej) {
+    var r = new FileReader();
+    r.onload = function(e) { res(e.target.result); };
+    r.onerror = function() { rej(new Error('FileReader error')); };
     r.readAsText(f);
   });
 }
 
 async function callAPI(key) {
-  log('callAPI()','inf');
-  var nm=GV('nm'), ar=GV('ar'), ow=GV('ow'), txt='', i;
-  for (i=0;i<FILES.length;i++) {
-    try { var t=await readTxt(FILES[i]); txt+='\nARQ:'+FILES[i].name+'\n'+t.substring(0,3000); log('lido:'+FILES[i].name,'ok'); }
-    catch(e) { log('erro lendo '+FILES[i].name,'w'); }
+  var nm = GV('nm'), ar = GV('ar'), ow = GV('ow'), txt = '';
+  for (var i = 0; i < FILES.length; i++) {
+    try { var t = await readTxt(FILES[i]); txt += '\nARQ:' + FILES[i].name + '\n' + t.substring(0, 3000); } catch(e) {}
   }
-  var tmpl='{"family":"string","technique":"string","description":"string","platform":"string","inputs":"string","outputs":"string","autonomy":"string","regulatory":"string","scores":{"D1":3,"D2":3,"D3":3,"D4":3,"D5":3,"D6":3},"weighted_score":3.0,"criticality_level":"N1","criticality_name":"Critico","tags":["tag"],"controls":[{"text":"texto","type":"crit"}],"validation_scope":"string","confidence":70,"confidence_note":"string"}';
-  var prompt='Analise e gere Model Card em JSON puro sem markdown.\nModelo:'+nm+'\nArea:'+ar+'\nOwner:'+ow+'\nFontes:'+SOURCES.join(',')+'\nLinks:'+LINKS.join(',')+'\nCtx:'+GV('ctx')+(txt?'\n'+txt:'')+'\nRetorne SOMENTE este JSON:\n'+tmpl;
-  log('prompt '+prompt.length+'c fetch...','inf');
-  var ctrl=new AbortController();
-  var tmr=setTimeout(function(){log('timeout 55s','err');ctrl.abort();},55000);
+  var tmpl = '{"family":"string","technique":"string","description":"string","platform":"string","inputs":"string","outputs":"string","autonomy":"string","regulatory":"string","scores":{"D1":3,"D2":3,"D3":3,"D4":3,"D5":3,"D6":3},"weighted_score":3.0,"criticality_level":"N1","criticality_name":"Critico","tags":["tag"],"controls":[{"text":"texto","type":"crit"}],"validation_scope":"string","confidence":70,"confidence_note":"string"}';
+  var prompt = 'Analise e gere Model Card em JSON puro sem markdown.\nModelo:' + nm + '\nArea:' + ar + '\nOwner:' + ow + '\nFontes:' + SOURCES.join(',') + '\nLinks:' + LINKS.join(',') + '\nCtx:' + GV('ctx') + (txt ? '\n' + txt : '') + '\nRetorne SOMENTE este JSON:\n' + tmpl;
+  var ctrl = new AbortController();
+  var tmr = setTimeout(function() { ctrl.abort(); }, 55000);
   var res;
   try {
-    res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST', signal:ctrl.signal,
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,messages:[{role:'user',content:prompt}]})
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] })
     });
-  } catch(fe) { clearTimeout(tmr); log('fetch erro:'+fe.name+' '+fe.message,'err'); throw fe; }
+  } catch(fe) {
+    clearTimeout(tmr);
+    showErr('Conexao: ' + fe.message + ' - usando demo.');
+    var d = makeDemo(); d.confidence_note = 'Erro conexao - modo demo.'; return d;
+  }
   clearTimeout(tmr);
-  log('HTTP '+res.status, res.ok?'ok':'err');
-  var data;
-  try { data=await res.json(); } catch(je) { log('json erro:'+je.message,'err'); throw je; }
-  log('keys:'+Object.keys(data).join(','),'inf');
-  if (!res.ok || data.error) { var em=data.error?data.error.message:'HTTP '+res.status; log('API erro:'+em,'err'); throw new Error(em); }
-  var raw='', ci;
-  for (ci=0;ci<data.content.length;ci++) { if(data.content[ci].text) raw+=data.content[ci].text; }
-  log('raw '+raw.length+'c','inf');
-  var js=raw.indexOf('{'), je=raw.lastIndexOf('}')+1;
-  if (js<0||je<=0) { log('sem JSON raw:'+raw.substring(0,60),'err'); throw new Error('Sem JSON valido'); }
-  var r=JSON.parse(raw.substring(js,je));
-  r.model_name=nm; r.model_area=ar; r.model_owner=ow;
-  log('JSON OK nivel='+r.criticality_level,'ok');
+  var data = await res.json();
+  if (!res.ok || data.error) {
+    var em = data.error ? data.error.message : 'HTTP ' + res.status;
+    showErr('API: ' + em + ' - usando demo.');
+    var d2 = makeDemo(); d2.confidence_note = 'Erro API (' + em + ') - modo demo.'; return d2;
+  }
+  var raw = '';
+  for (var ci = 0; ci < data.content.length; ci++) { if (data.content[ci].text) raw += data.content[ci].text; }
+  var js = raw.indexOf('{'), je = raw.lastIndexOf('}') + 1;
+  if (js < 0 || je <= 0) { showErr('Sem JSON - usando demo.'); return makeDemo(); }
+  var r = JSON.parse(raw.substring(js, je));
+  r.model_name = nm; r.model_area = ar; r.model_owner = ow;
   return r;
 }
 
 function makeDemo() {
-  log('makeDemo()','w');
   return {
-    model_name:GV('nm')||'Scoring de Credito PF', model_area:GV('ar')||'SUPEC', model_owner:GV('ow')||'Demo',
-    family:'Machine Learning', technique:'Gradient Boosting (XGBoost)',
-    description:'Modelo para estimacao de probabilidade de default em carteiras PF.',
-    platform:'Python + Databricks (MLflow)',
-    inputs:'Score bureau, historico, renda, tempo de relacionamento',
-    outputs:'Score PD (0-1000), faixa de risco (A-G), limite recomendado',
-    autonomy:'Automatico ate R$50mil; aprovacao humana acima',
-    regulatory:'Basileia III / IFRS 9',
-    scores:{D1:4,D2:4,D3:4,D4:3,D5:5,D6:3}, weighted_score:3.90,
-    criticality_level:'N1', criticality_name:'Critico',
-    tags:['credito-pf','pd-model','xgboost'],
-    controls:[
-      {text:'Monitoramento continuo PSI/KS/Gini',type:'crit'},
-      {text:'Validacao independente anual',type:'crit'},
-      {text:'Analise de vies a cada recalibracao',type:'warn'},
-      {text:'Aprovacao do Comite para alteracoes',type:'ok'}
+    model_name: GV('nm') || 'Scoring de Credito PF',
+    model_area: GV('ar') || 'SUPEC',
+    model_owner: GV('ow') || 'Demo',
+    family: 'Machine Learning',
+    technique: 'Gradient Boosting (XGBoost)',
+    description: 'Modelo para estimacao de probabilidade de default em carteiras PF.',
+    platform: 'Python + Databricks (MLflow)',
+    inputs: 'Score bureau, historico, renda, tempo de relacionamento',
+    outputs: 'Score PD (0-1000), faixa de risco (A-G), limite recomendado',
+    autonomy: 'Automatico ate R$50 mil; aprovacao humana acima',
+    regulatory: 'Basileia III / IFRS 9',
+    scores: { D1:4, D2:4, D3:4, D4:3, D5:5, D6:3 },
+    weighted_score: 3.90,
+    criticality_level: 'N1',
+    criticality_name: 'Critico',
+    tags: ['credito-pf','pd-model','xgboost'],
+    controls: [
+      { text:'Monitoramento continuo PSI/KS/Gini', type:'crit' },
+      { text:'Validacao independente anual', type:'crit' },
+      { text:'Analise de vies a cada recalibracao', type:'warn' },
+      { text:'Aprovacao do Comite para alteracoes', type:'ok' }
     ],
-    validation_scope:'Validacao Profunda N1: revisao conceitual, backtesting 24 meses, stress test.',
-    confidence:72, confidence_note:'Resultado de demonstracao.'
+    validation_scope: 'Validacao Profunda N1: revisao conceitual, backtesting 24 meses, stress test.',
+    confidence: 72,
+    confidence_note: 'Resultado de demonstracao.'
   };
 }
 
 function renderMC(r) {
-  log('renderMC()','inf');
-  var id=r.uid||uid(); r.uid=id;
-  var ts=new Date().toLocaleString('pt-BR');
-  var oe=GV('oe'), ve=GV('ve');
-  var dm={D1:'D1 Impacto Fin.',D2:'D2 Exp. Reg.',D3:'D3 Autonomia',D4:'D4 Opacidade',D5:'D5 Abrangencia',D6:'D6 Maturidade'};
-  var sc=r.scores||{}, k, scH='';
+  var id = r.uid || mkUID(); r.uid = id;
+  var ts = new Date().toLocaleString('pt-BR');
+  var oe = GV('oe'), ve = GV('ve');
+  var dm = { D1:'D1 Impacto Fin.', D2:'D2 Exp. Reg.', D3:'D3 Autonomia', D4:'D4 Opacidade', D5:'D5 Abrangencia', D6:'D6 Maturidade' };
+  var sc = r.scores || {}, k, scH = '';
   for (k in sc) {
-    scH+='<div class="scrow"><div class="scd">'+(dm[k]||k)+'</div>';
-    scH+='<div class="sctrk"><div class="scf" style="width:'+Math.round((sc[k]/5)*100)+'%"></div></div>';
-    scH+='<div class="scv">'+sc[k]+'/5</div></div>';
+    scH += '<div class="scrow"><div class="scd">' + (dm[k]||k) + '</div>';
+    scH += '<div class="sctrk"><div class="scf" style="width:' + Math.round((sc[k]/5)*100) + '%"></div></div>';
+    scH += '<div class="scv">' + sc[k] + '/5</div></div>';
   }
-  var controls=r.controls||[], ctH='', ci;
-  for (ci=0;ci<controls.length;ci++) {
-    var c=controls[ci], cls='ci';
-    if (c.type==='crit') cls='ci ci-crit';
-    else if (c.type==='warn') cls='ci ci-warn';
-    else if (c.type==='ok') cls='ci ci-ok';
-    ctH+='<div class="'+cls+'">'+(c.text||'')+'</div>';
+  var controls = r.controls || [], ctH = '', ci;
+  for (ci = 0; ci < controls.length; ci++) {
+    var c = controls[ci], cls = 'ci';
+    if (c.type === 'crit') cls = 'ci ci-crit';
+    else if (c.type === 'warn') cls = 'ci ci-warn';
+    else if (c.type === 'ok') cls = 'ci ci-ok';
+    ctH += '<div class="' + cls + '">' + (c.text||'') + '</div>';
   }
-  var tags=r.tags||[], tgH='', ti;
-  for (ti=0;ti<tags.length;ti++) tgH+='<div class="tag">'+tags[ti]+'</div>';
+  var tags = r.tags || [], tgH = '', ti;
+  for (ti = 0; ti < tags.length; ti++) tgH += '<div class="tag">' + tags[ti] + '</div>';
+  var h = '';
+  h += '<div class="mc-hd"><div class="mc-id">' + id + '</div><div class="mc-n">' + (r.model_name||'') + '</div>';
+  h += '<div class="mc-f">' + (r.family||'') + ' - ' + (r.technique||'') + '</div>';
+  h += '<div class="mc-lv"><div class="mc-ln">' + (r.criticality_level||'') + '</div><div class="mc-lname">' + (r.criticality_name||'') + '</div></div>';
+  h += '<div class="mc-meta"><div><div class="mc-ml">Area</div><div class="mc-mv">' + (r.model_area||'') + '</div></div>';
+  h += '<div><div class="mc-ml">Owner</div><div class="mc-mv">' + (r.model_owner||'') + '</div></div>';
+  h += '<div><div class="mc-ml">Gerado</div><div class="mc-mv">' + ts + '</div></div>';
+  h += '<div><div class="mc-ml">Confianca</div><div class="mc-mv">' + (r.confidence||0) + '%</div></div></div></div>';
+  h += '<div class="card"><div class="card-t">Descricao</div><div class="txt">' + (r.description||'') + '</div></div>';
+  h += '<div class="card"><div class="card-t">Identificacao Tecnica</div><div class="ig">';
+  h += '<div class="ic"><div class="ic-l">Tecnica</div><div class="ic-v">' + (r.technique||'') + '</div></div>';
+  h += '<div class="ic"><div class="ic-l">Plataforma</div><div class="ic-v">' + (r.platform||'') + '</div></div>';
+  h += '<div class="ic"><div class="ic-l">Inputs</div><div class="ic-v">' + (r.inputs||'') + '</div></div>';
+  h += '<div class="ic"><div class="ic-l">Outputs</div><div class="ic-v">' + (r.outputs||'') + '</div></div>';
+  h += '<div class="ic"><div class="ic-l">Autonomia</div><div class="ic-v">' + (r.autonomy||'') + '</div></div>';
+  h += '<div class="ic"><div class="ic-l">Regulatorio</div><div class="ic-v">' + (r.regulatory||'') + '</div></div>';
+  h += '<div class="ic"><div class="ic-l">Fontes</div><div class="ic-v">' + (SOURCES.length ? SOURCES.join(', ') : 'nao especificadas') + '</div></div>';
+  h += '<div class="ic"><div class="ic-l">Chave</div><div class="ic-v" style="color:#005CA9;font-family:monospace;font-size:11px">' + id + '</div></div></div></div>';
+  h += '<div class="card"><div class="card-t">Criticidade</div>' + scH;
+  h += '<div class="sctot"><div class="sctot-l">Pontuacao Ponderada</div><div class="sctot-v">' + ((r.weighted_score||0).toFixed(2)) + '</div></div>';
+  h += '<div style="font-size:11px;color:#B8BEC9;margin-top:4px">' + (r.confidence_note||'') + '</div></div>';
+  h += '<div class="card"><div class="card-t">Tags</div><div class="tags">' + tgH + '</div></div>';
+  h += '<div class="card"><div class="card-t">Controles Recomendados</div>' + ctH + '</div>';
+  h += '<div class="card"><div class="card-t">Escopo de Validacao</div><div class="txt">' + (r.validation_scope||'') + '</div></div>';
+  var eoL = ['Prezado(a) '+(r.model_owner||'')+',','','Catalogacao concluida!','','ID: '+id,'Modelo: '+(r.model_name||''),'Nivel: '+(r.criticality_level||'')+' - '+(r.criticality_name||''),'Pontuacao: '+((r.weighted_score||0).toFixed(2))+'/5','Gerado: '+ts,'','Proximos passos:','1. Revise o Model Card','2. Confirme ou solicite revisao','','Equipe ModelScan'];
+  var evL = ['Equipe de Validacao,','','Novo modelo - criticidade '+(r.criticality_level||'')+'.','','ID: '+id,'Modelo: '+(r.model_name||''),'Area: '+(r.model_area||''),'Owner: '+(r.model_owner||''),'Nivel: '+(r.criticality_level||'')+' - '+(r.criticality_name||''),'Pontuacao: '+((r.weighted_score||0).toFixed(2))+'/5','','Aguarda validacao.','ModelScan'];
+  h += '<div class="card"><div class="card-t">Notificacao - Owner</div><div style="font-size:12px;color:#B8BEC9;margin-bottom:8px">Para: '+oe+'</div><div class="email-pre">'+eoL.join('\n')+'</div></div>';
+  h += '<div class="card"><div class="card-t">Notificacao - Validacao</div><div style="font-size:12px;color:#B8BEC9;margin-bottom:8px">Para: '+ve+'</div><div class="email-pre">'+evL.join('\n')+'</div></div>';
+  h += '<div class="card"><div class="card-t">Sua Confirmacao</div>';
+  h += '<div class="g2" style="margin-bottom:12px"><div class="field" style="margin:0"><label>Corrigir Tecnica</label><input type="text" id="mtech" placeholder="Confirme ou corrija..."></div>';
+  h += '<div class="field" style="margin:0"><label>Corrigir Autonomia</label><select id="maut"><option value="">manter</option><option>100% automatizado</option><option>Revisao em excecoes</option><option>Aprovacao sistematica</option><option>Subsidio analitico</option><option>Apenas informativo</option></select></div></div>';
+  h += '<div class="field"><label>Observacoes</label><textarea id="mnotes" placeholder="Correcoes ou contexto..."></textarea></div>';
 
-  var h='';
-  h+='<div class="mc-hd">';
-  h+='<div class="mc-id">'+id+'</div>';
-  h+='<div class="mc-n">'+(r.model_name||'')+'</div>';
-  h+='<div class="mc-f">'+(r.family||'')+' - '+(r.technique||'')+'</div>';
-  h+='<div class="mc-lv"><div class="mc-ln">'+(r.criticality_level||'')+'</div><div class="mc-lname">'+(r.criticality_name||'')+'</div></div>';
-  h+='<div class="mc-meta">';
-  h+='<div><div class="mc-ml">Area</div><div class="mc-mv">'+(r.model_area||'')+'</div></div>';
-  h+='<div><div class="mc-ml">Owner</div><div class="mc-mv">'+(r.model_owner||'')+'</div></div>';
-  h+='<div><div class="mc-ml">Gerado</div><div class="mc-mv">'+ts+'</div></div>';
-  h+='<div><div class="mc-ml">Confianca</div><div class="mc-mv">'+(r.confidence||0)+'%</div></div>';
-  h+='</div></div>';
-  h+='<div class="card"><div class="card-t">Descricao</div><div class="txt">'+(r.description||'')+'</div></div>';
-  h+='<div class="card"><div class="card-t">Identificacao Tecnica</div><div class="ig">';
-  h+='<div class="ic"><div class="ic-l">Tecnica</div><div class="ic-v">'+(r.technique||'')+'</div></div>';
-  h+='<div class="ic"><div class="ic-l">Plataforma</div><div class="ic-v">'+(r.platform||'')+'</div></div>';
-  h+='<div class="ic"><div class="ic-l">Inputs</div><div class="ic-v">'+(r.inputs||'')+'</div></div>';
-  h+='<div class="ic"><div class="ic-l">Outputs</div><div class="ic-v">'+(r.outputs||'')+'</div></div>';
-  h+='<div class="ic"><div class="ic-l">Autonomia</div><div class="ic-v">'+(r.autonomy||'')+'</div></div>';
-  h+='<div class="ic"><div class="ic-l">Regulatorio</div><div class="ic-v">'+(r.regulatory||'')+'</div></div>';
-  h+='<div class="ic"><div class="ic-l">Fontes</div><div class="ic-v">'+(SOURCES.length?SOURCES.join(', '):'nao especificadas')+'</div></div>';
-  h+='<div class="ic"><div class="ic-l">Chave</div><div class="ic-v" style="color:#005CA9;font-family:monospace;font-size:11px">'+id+'</div></div>';
-  h+='</div></div>';
-  h+='<div class="card"><div class="card-t">Criticidade</div>'+scH;
-  h+='<div class="sctot"><div class="sctot-l">Pontuacao Ponderada</div><div class="sctot-v">'+((r.weighted_score||0).toFixed(2))+'</div></div>';
-  h+='<div style="font-size:11px;color:#B8BEC9;margin-top:4px">'+(r.confidence_note||'')+'</div></div>';
-  h+='<div class="card"><div class="card-t">Tags</div><div class="tags">'+tgH+'</div></div>';
-  h+='<div class="card"><div class="card-t">Controles Recomendados</div>'+ctH+'</div>';
-  h+='<div class="card"><div class="card-t">Escopo de Validacao</div><div class="txt">'+(r.validation_scope||'')+'</div></div>';
-
-  var eoL=['Prezado(a) '+(r.model_owner||'')+',,','','Catalogacao concluida!','','ID: '+id,'Modelo: '+(r.model_name||''),'Nivel: '+(r.criticality_level||'')+' - '+(r.criticality_name||''),'Pontuacao: '+((r.weighted_score||0).toFixed(2))+'/5','Gerado: '+ts,'','Proximos passos:','1. Revise o Model Card','2. Confirme ou solicite revisao','','Equipe ModelScan'];
-  var evL=['Equipe de Validacao,,','','Novo modelo - criticidade '+(r.criticality_level||'')+'.','','ID: '+id,'Modelo: '+(r.model_name||''),'Area: '+(r.model_area||''),'Owner: '+(r.model_owner||''),'Nivel: '+(r.criticality_level||'')+' - '+(r.criticality_name||''),'Pontuacao: '+((r.weighted_score||0).toFixed(2))+'/5','','Aguarda validacao.','ModelScan'];
-
-  h+='<div class="card"><div class="card-t">Notificacao - Owner</div>';
-  h+='<div style="font-size:12px;color:#B8BEC9;margin-bottom:8px">Para: '+oe+'</div>';
-  h+='<div class="email-pre">'+eoL.join('\n')+'</div></div>';
-  h+='<div class="card"><div class="card-t">Notificacao - Validacao</div>';
-  h+='<div style="font-size:12px;color:#B8BEC9;margin-bottom:8px">Para: '+ve+'</div>';
-  h+='<div class="email-pre">'+evL.join('\n')+'</div></div>';
-
-  h+='<div class="card"><div class="card-t">Sua Confirmacao</div>';
-  h+='<div class="g2" style="margin-bottom:12px">';
-  h+='<div class="field" style="margin:0"><label>Corrigir Tecnica</label><input type="text" id="mtech" placeholder="Confirme ou corrija..."></div>';
-  h+='<div class="field" style="margin:0"><label>Corrigir Autonomia</label><select id="maut"><option value="">manter</option><option>100% automatizado</option><option>Revisao em excecoes</option><option>Aprovacao sistematica</option><option>Subsidio analitico</option><option>Apenas informativo</option></select></div>';
-  h+='</div>';
-  h+='<div class="field"><label>Observacoes</label><textarea id="mnotes" placeholder="Correcoes ou contexto..."></textarea></div>';
-
-h+=’<div class="dec-row"><button class="dec-btn" type="button" id="btn-ap">OK Confirmo!</button><button class="dec-btn" type="button" id="btn-rj">Solicito revisao</button></div>’;
-h+=’<button class="btn-run" type="button" id="btn-fin" disabled style="opacity:.4;margin-top:12px">Finalizar e Registrar</button>’;
-h+=’<div id="ok-final" style="display:none" class="ok"></div></div>’;
-h+=’<div style="display:flex;gap:8px;padding-bottom:10px">’;
-h+=’<button class="btn-s" type="button" id="btn-ej">JSON</button>’;
-h+=’<button class="btn-s" type="button" id="btn-et">TXT</button>’;
-h+=’<button class="btn-s" type="button" id="btn-ep">PDF</button>’;
-h+=’</div>’;
-
-G(‘mc-out’).innerHTML=h;
-
-G(‘btn-ap’).addEventListener(‘click’,function(){setD(‘approve’);});
-G(‘btn-rj’).addEventListener(‘click’,function(){setD(‘reject’);});
-G(‘btn-fin’).addEventListener(‘click’,function(){finish();});
-G(‘btn-ej’).addEventListener(‘click’,expJ);
-G(‘btn-et’).addEventListener(‘click’,expT);
-G(‘btn-ep’).addEventListener(‘click’,function(){window.print();});
-log(‘renderMC OK id=’+id,‘ok’);
+h += ‘<div class="dec-row"><button class="dec-btn" type="button" id="btn-ap">OK Confirmo!</button><button class="dec-btn" type="button" id="btn-rj">Solicito revisao</button></div>’;
+h += ‘<button class="btn-run" type="button" id="btn-fin" disabled style="opacity:.4;margin-top:12px">Finalizar e Registrar</button>’;
+h += ‘<div id="ok-final" style="display:none" class="ok"></div></div>’;
+h += ‘<div style="display:flex;gap:8px;padding-bottom:10px"><button class="btn-s" type="button" id="btn-ej">JSON</button><button class="btn-s" type="button" id="btn-et">TXT</button><button class="btn-s" type="button" id="btn-ep">PDF</button></div>’;
+document.getElementById(‘mc-out’).innerHTML = h;
+document.getElementById(‘btn-ap’).addEventListener(‘click’, function() { setD(‘approve’); });
+document.getElementById(‘btn-rj’).addEventListener(‘click’, function() { setD(‘reject’); });
+document.getElementById(‘btn-fin’).addEventListener(‘click’, function() { finish(); });
+document.getElementById(‘btn-ej’).addEventListener(‘click’, expJ);
+document.getElementById(‘btn-et’).addEventListener(‘click’, expT);
+document.getElementById(‘btn-ep’).addEventListener(‘click’, function() { window.print(); });
 }
 
 function setD(d) {
-DECISION=d; log(‘decisao=’+d,‘ok’);
-var ba=G(‘btn-ap’),br=G(‘btn-rj’),bf=G(‘btn-fin’);
-if(ba) ba.className=d===‘approve’?‘dec-btn dec-ap-on’:‘dec-btn’;
-if(br) br.className=d===‘reject’?‘dec-btn dec-rj-on’:‘dec-btn’;
-if(bf){bf.disabled=false;bf.style.opacity=‘1’;}
+DECISION = d;
+var ba = document.getElementById(‘btn-ap’), br = document.getElementById(‘btn-rj’), bf = document.getElementById(‘btn-fin’);
+if (ba) ba.className = d === ‘approve’ ? ‘dec-btn dec-ap-on’ : ‘dec-btn’;
+if (br) br.className = d === ‘reject’  ? ‘dec-btn dec-rj-on’ : ‘dec-btn’;
+if (bf) { bf.disabled = false; bf.style.opacity = ‘1’; }
 }
 
 function finish() {
-if(!DECISION) return;
-log(‘finish=’+DECISION,‘ok’);
-var ts=new Date().toLocaleString(‘pt-BR’), ow=GV(‘ow’);
-var bf=G(‘btn-fin’), ob=G(‘ok-final’);
-if(bf){bf.disabled=true;bf.style.opacity=’.4’;bf.textContent=DECISION===‘approve’?‘Registrado!’:‘Revisao solicitada’;}
-if(ob){ob.style.display=‘block’;ob.innerHTML=DECISION===‘approve’?‘Registrado! Chave: <strong>’+(RESULT.uid||’’)+’</strong><br>Por ‘+ow+’ em ’+ts:’Revisao solicitada por ‘+ow+’ em ’+ts;}
+if (!DECISION) return;
+var ts = new Date().toLocaleString(‘pt-BR’), ow = GV(‘ow’);
+var bf = document.getElementById(‘btn-fin’), ob = document.getElementById(‘ok-final’);
+if (bf) { bf.disabled = true; bf.style.opacity = ‘.4’; bf.textContent = DECISION === ‘approve’ ? ‘Registrado!’ : ‘Revisao solicitada’; }
+if (ob) {
+ob.style.display = ‘block’;
+ob.innerHTML = DECISION === ‘approve’ ? ‘Registrado! Chave: <strong>’ + (RESULT.uid||’’) + ’</strong><br>Por ’ + ow + ’ em ’ + ts : ’Revisao solicitada por ’ + ow + ’ em ’ + ts;
+}
 }
 
 function expJ() {
-if(!RESULT) return;
-var a=document.createElement(‘a’);
-a.href=URL.createObjectURL(new Blob([JSON.stringify(RESULT,null,2)],{type:‘application/json’}));
-a.download=‘mc-’+(RESULT.uid||‘mc’)+’.json’;
-document.body.appendChild(a);a.click();document.body.removeChild(a);
-log(‘JSON exportado’,‘ok’);
+if (!RESULT) return;
+var a = document.createElement(‘a’);
+a.href = URL.createObjectURL(new Blob([JSON.stringify(RESULT,null,2)],{type:‘application/json’}));
+a.download = ‘mc-’+(RESULT.uid||‘mc’)+’.json’;
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
 function expT() {
-if(!RESULT) return;
-var lines=[‘MODEL CARD: ‘+RESULT.model_name,‘Chave: ‘+RESULT.uid,‘Nivel: ‘+RESULT.criticality_level+’ - ‘+RESULT.criticality_name,‘Pontuacao: ‘+((RESULT.weighted_score||0).toFixed(2))+’/5’,’’,‘Descricao:’,RESULT.description,’’,‘Escopo:’,RESULT.validation_scope];
-var a=document.createElement(‘a’);
-a.href=URL.createObjectURL(new Blob([lines.join(’\n’)],{type:‘text/plain’}));
-a.download=‘mc-’+(RESULT.uid||‘mc’)+’.txt’;
-document.body.appendChild(a);a.click();document.body.removeChild(a);
-log(‘TXT exportado’,‘ok’);
+if (!RESULT) return;
+var lines = [‘MODEL CARD: ‘+RESULT.model_name,‘Chave: ‘+RESULT.uid,‘Nivel: ‘+RESULT.criticality_level+’ - ‘+RESULT.criticality_name,‘Pontuacao: ‘+((RESULT.weighted_score||0).toFixed(2))+’/5’,’’,‘Descricao:’,RESULT.description,’’,‘Escopo:’,RESULT.validation_scope];
+var a = document.createElement(‘a’);
+a.href = URL.createObjectURL(new Blob([lines.join(’\n’)],{type:‘text/plain’}));
+a.download = ‘mc-’+(RESULT.uid||‘mc’)+’.txt’;
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
-
-log(‘JS OK. Safari=’+/Safari/.test(navigator.userAgent)+’ iOS=’+/iPhone|iPad/.test(navigator.userAgent),‘ok’);
-log(’URL: ’+window.location.href,‘inf’);
-log(‘PRONTO.’,‘ok’);
-
-})();
 </script>
 
 </body>
