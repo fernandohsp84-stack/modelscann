@@ -47,8 +47,8 @@ textarea{resize:vertical;min-height:80px;}
 .ladd{background:#F0F2F5;border:1.5px solid #D0D5DD;border-radius:8px;padding:0 14px;font-size:14px;font-family:inherit;cursor:pointer;-webkit-appearance:none;color:#005CA9;font-weight:600;white-space:nowrap;}
 .chip{display:inline-block;background:#EBF3FB;border:1px solid rgba(0,92,169,.2);border-radius:20px;padding:4px 10px;font-size:12px;color:#005CA9;margin:3px 4px 3px 0;}
 /* BOTÃO PRINCIPAL - tipo submit, sem position */
-.btn-run{display:block;width:100%;padding:17px;background:#005CA9;color:#fff;border:none;border-radius:10px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;-webkit-appearance:none;margin-top:14px;text-align:center;-webkit-tap-highlight-color:rgba(255,255,255,.3);}
-.btn-run:active{background:#003F7A;}
+.btn-run{display:block;width:100%;padding:17px;background:#005CA9 !important;color:#fff !important;border:none !important;border-radius:10px;font-size:17px;font-weight:700;cursor:pointer;font-family:-apple-system,'Inter',sans-serif;-webkit-appearance:none !important;appearance:none !important;margin-top:14px;text-align:center;opacity:1 !important;-webkit-opacity:1 !important;touch-action:manipulation;box-shadow:none;outline:none;box-sizing:border-box;-webkit-tap-highlight-color:rgba(0,0,0,0.1);user-select:none;-webkit-user-select:none;}
+.btn-run:active,.btn-run:focus{background:#003F7A !important;outline:none;}
 .btn-s{display:inline-block;padding:11px 16px;background:#fff;color:#3C4353;border:1.5px solid #D0D5DD;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-appearance:none;margin-top:0;}
 /* RESULTADO */
 .ok{background:#E6F4EE;border:1px solid rgba(27,127,79,.3);border-radius:10px;padding:14px;margin-bottom:12px;font-size:14px;color:#1B7F4F;font-weight:600;line-height:1.6;}
@@ -218,7 +218,7 @@ textarea{resize:vertical;min-height:80px;}
 <div class="spin"></div>
 <div id="loading-txt" style="font-size:14px;color:#717A8C;">Iniciando agentes...</div>
 </div>
-<button class="btn-run" type="button" id="btn-run" onclick="iniciar()">&#9654; Executar Análise</button>
+<button class="btn-run" type="button" id="btn-run">&#9654; Executar Análise</button>
 </div>
 
 <div class="sep"></div>
@@ -285,6 +285,7 @@ function makeUID(){return 'MDL-'+Math.random().toString(36).substr(2,6).toUpperC
 
 
 function iniciar(){
+  alert("CLICOU! iniciar() executou.");
   var nm=GV('nm'),ar=GV('ar'),ow=GV('ow'),oe=GV('oe');
   if(!nm){alert('Informe o Nome do Modelo.');return;}
   if(!ar){alert('Informe a Area.');return;}
@@ -385,6 +386,49 @@ if(ob){ob.style.display=‘block’;ob.innerHTML=DECISION===‘approve’?’✅
 }
 function expJ(){if(!RESULT)return;var a=document.createElement(‘a’);a.href=URL.createObjectURL(new Blob([JSON.stringify(RESULT,null,2)],{type:‘application/json’}));a.download=‘mc-’+(RESULT.uid||‘mc’)+’.json’;document.body.appendChild(a);a.click();document.body.removeChild(a);}
 function expT(){if(!RESULT)return;var t=‘MODEL CARD: ‘+RESULT.model_name+’\nChave: ‘+RESULT.uid+’\nNível: ‘+RESULT.criticality_level+’  -  ‘+RESULT.criticality_name+’\nPontuação: ‘+((RESULT.weighted_score||0).toFixed(2))+’/5\n\nDescrição:\n’+RESULT.description+’\n\nEscopo:\n’+RESULT.validation_scope;var a=document.createElement(‘a’);a.href=URL.createObjectURL(new Blob([t],{type:‘text/plain’}));a.download=‘mc-’+(RESULT.uid||‘mc’)+’.txt’;document.body.appendChild(a);a.click();document.body.removeChild(a);}
+
+// ── BOOTSTRAP — padrão Risk Intel ──────────────────────────────
+function bootstrap(){
+// Página corrida — sem renderização inicial necessária
+
+// Wire botão Executar Análise — 3 eventos igual Risk Intel
+var btnRun=document.getElementById(‘btn-run’);
+if(btnRun){
+function doRun(e){
+if(e&&e.preventDefault)e.preventDefault();
+if(e&&e.stopPropagation)e.stopPropagation();
+iniciar();
+}
+btnRun.addEventListener(‘click’,    doRun,   false);
+btnRun.addEventListener(‘touchend’, doRun,   false);
+btnRun.addEventListener(‘touchstart’,function(){},{passive:true});
+}
+
+// Wire eye (mostrar/ocultar chave)
+var eyeBtn=document.querySelector(’.eye’);
+if(eyeBtn){
+function doEye(e){e.preventDefault();var i=document.getElementById(‘api-key’);if(i)i.type=(i.type===‘password’?‘text’:‘password’);}
+eyeBtn.addEventListener(‘click’,    doEye,  false);
+eyeBtn.addEventListener(‘touchend’, doEye,  false);
+eyeBtn.addEventListener(‘touchstart’,function(){},{passive:true});
+}
+
+// Wire + Add links
+var laddBtn=document.querySelector(’.ladd’);
+if(laddBtn){
+function doAdd(e){e.preventDefault();addLink();}
+laddBtn.addEventListener(‘click’,    doAdd, false);
+laddBtn.addEventListener(‘touchend’, doAdd, false);
+laddBtn.addEventListener(‘touchstart’,function(){},{passive:true});
+}
+}
+
+// Igual Risk Intel — garante execução pós-DOM
+if(document.readyState===‘loading’){
+document.addEventListener(‘DOMContentLoaded’,bootstrap);
+}else{
+bootstrap();
+}
 </script>
 
 </body>
