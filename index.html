@@ -218,7 +218,7 @@ textarea{resize:vertical;min-height:80px;}
 <div class="spin"></div>
 <div id="loading-txt" style="font-size:14px;color:#717A8C;">Iniciando agentes...</div>
 </div>
-<button class="btn-run" type="button" id="btn-run" onclick="executar()">&#9654; Executar Análise</button>
+<button class="btn-run" type="button" id="btn-run" onclick="iniciar()">&#9654; Executar Análise</button>
 </div>
 
 <div class="sep"></div>
@@ -283,14 +283,31 @@ function G(id){return document.getElementById(id);}
 function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
 function makeUID(){return 'MDL-'+Math.random().toString(36).substr(2,6).toUpperCase();}
 
-async function executar(){
+
+function iniciar(){
   var nm=GV('nm'),ar=GV('ar'),ow=GV('ow'),oe=GV('oe');
   if(!nm){alert('Informe o Nome do Modelo.');return;}
-  if(!ar){alert('Informe a Área.');return;}
+  if(!ar){alert('Informe a Area.');return;}
   if(!ow){alert('Informe o Model Owner.');return;}
   if(!oe){alert('Informe seu e-mail.');return;}
-  G('btn-run').style.display='none';
-  G('loading').style.display='block';
+  var btn=document.getElementById('btn-run');
+  var ld=document.getElementById('loading');
+  var lt=document.getElementById('loading-txt');
+  if(btn) btn.style.display='none';
+  if(ld) ld.style.display='block';
+  if(lt) lt.textContent='Iniciando analise...';
+  setTimeout(function(){
+    executar().catch(function(e){
+      console.error('executar error:',e);
+      if(ld) ld.style.display='none';
+      if(btn) btn.style.display='block';
+      alert('Erro na analise: '+e.message);
+    });
+  },100);
+}
+
+async function executar(){
+  // Validação e display já feitos por iniciar()
   var steps=['Agente de Ingestão: lendo fontes...','Agente RAG: extraindo informações...','Agente Classificador: identificando técnica...','Agente de Criticidade: calculando dimensões...','Síntese: gerando Model Card...'],i;
   for(i=0;i<steps.length;i++){G('loading-txt').textContent=steps[i];await wait(i===1?1800:1200);}
   RESULT=GV('api-key')?await callAPI(GV('api-key')):makeDemo();
